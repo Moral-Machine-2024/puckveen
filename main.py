@@ -6,11 +6,11 @@
 #
 # HI PUCK YOU SHOULD COMMIT/PUSH YOUR CHANGES OFTEN AND IT IS OK IF YOU REUSE YOUR CODE FROM LAST SEMESTER
 #
-
+# hi there
 
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+    print(f'Hi, {Michal}')  # Press Ctrl+F8 to toggle the breakpoint.
 
 
 # Press the green button in the gutter to run the script.
