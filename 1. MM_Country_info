@@ -1,0 +1,31 @@
+The data of the Moral Machine Experiment contains a list of 130 countries with no missing values. These are part of the dataframe: df_countries_change.
+
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 130 entries, 0 to 129
+Data columns (total 19 columns):
+ #   Column                              Non-Null Count  Dtype  
+---  ------                              --------------  -----  
+ 0   iso3                                130 non-null    object 
+ 1   omission_commission_estimates       130 non-null    float64
+ 2   passengers_pedestrians_estimates    130 non-null    float64
+ 3   law_illegal_legal_estimates         130 non-null    float64
+ 4   gender_male_female_estimates        130 non-null    float64
+ 5   fitness_large_fit_estimates         130 non-null    float64
+ 6   social_status_low_high_estimates    130 non-null    float64
+ 7   age_elderly_young_estimates         130 non-null    float64
+ 8   num_characters_less_more_estimates  130 non-null    float64
+ 9   species_pets_humans_estimates       130 non-null    float64
+ 10  omission_commission_se              130 non-null    float64
+ 11  passengers_pedestrians_se           130 non-null    float64
+ 12  law_illegal_legal_se                130 non-null    float64
+ 13  gender_male_female_se               130 non-null    float64
+ 14  fitness_large_fit_se                130 non-null    float64
+ 15  social_status_low_high_se           130 non-null    float64
+ 16  age_elderly_young_se                130 non-null    float64
+ 17  num_characters_less_more_se         130 non-null    float64
+ 18  species_pets_humans_se              130 non-null    float64
+dtypes: float64(18), object(1)
+memory usage: 19.4+ KB
+
+
+df_countries_cha
