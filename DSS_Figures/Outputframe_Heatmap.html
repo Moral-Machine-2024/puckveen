@@ -15,3 +15,22 @@
     }
   });
 </script>
+
+#Here is the code for the Heatmap, via Python, Jupter Notebook.
+#Produced with Ploty.js (v2.24.1)
+#I put a png version in the file as well
+
+count_users = (
+     df_odb_ranking[["ISO3", "Country", "Cluster"]]
+    .merge(iso_3_countries_counts, left_on="ISO3", right_on="user_country3")
+    .rename(columns={"user_id": "Count Users"})
+)
+
+fig = px.choropleth(
+    count_users,
+    locations="ISO3",
+    color="Count Users",
+    hover_name="Country",
+    color_continuous_scale=px.colors.sequential.OrRd
+  )
+fig.show()
