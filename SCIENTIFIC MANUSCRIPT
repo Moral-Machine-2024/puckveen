@@ -1,0 +1,45 @@
+Scientific Manuscript: providing the logical flow of the thesis programming steps.
+
+1.Data_Collection
+The datasets used in this project can be retrieved at 
+Moral Machine Experiment (MM): OSF | Moral Machine
+Open Data Barometer (ODB): The Open Data Barometer
+
+2_Data_Overview
+Create an overview of the data, the data type, info() and head().
+Moral Machine Experiment (MM): CountriesChangePR.csv, contains 130 entries and a total of 19 columns, of which 18 are float64 and 1 object.
+Moral Machine Experiment (MM): SharedResponses.csv, contains 20 different types of columns which relate to the responses of filling in the MM. In this csv file the estimates and standard errors for the moral dilemmas are presented. There are 11,286,141 #3lac responses in the dataset in total.
+Open Data Barometer (ODB): ODB_ranking.csv, contains four legal systems, in the column; ‘cluster’: A map of all countries which are assigned a culture in the dataset is created using the libraries matplotlib and geopandas. Only these countries are going to be considered in the project. The considered countries (ISO3) are then categorized by continent with the library pycountry_convert. 
+
+3_Cleaned_DFs
+This phase is dedicated to meticulously cleaning and preparing the dataset for detailed analysis:
+Function Implementation:
+clean_columns: Applied to adjust data types and clean specific columns, ensuring consistency and usability for subsequent analysis.
+analyze_data_overview: Utilized to scrutinize the overview of the dataset, focusing on structural insights and preliminary assessments.
+check_missing_values: This function rigorously checks for missing values across the dataset, determining the extent of data imputation or deletion needed.
+irrelevant_features_removal: Identifies and removes irrelevant features based on the analysis, streamlining the dataset for focused analyses.
+session_data_analysis: Examines user sessions and interactions to filter out or correct anomalies and irregular entries.
+scenario_completion_check: Ensures that all scenarios are complete and no partial records are included in the analysis set.
+user_demographics_analysis: Uses visualization tools like sns.barplot to analyze 'age' and 'gender' distributions, providing demographic insights that may influence moral decision-making patterns.
+country_categorization_by_cluster: Specific user countries in both the Moral Machine Experiment and the Open Data Barometer datasets are categorized per cluster using ISO codes to align the cultural contexts with legal systems.
+Example Application of Functions:
+Stratified Sampling Application: Utilizing clean_columns and analyze_data_overview, a stratified sub-sample is created for each continent based on the ODB legal system categories identified in cluster. This ensures that the sub-sample maintains a representative proportion of responses from each legal system.
+Demographic Proportion Verification: user_demographics_analysis and country_categorization_by_cluster are applied to verify that the proportions of user demographics and scenarios reflect the intended structure of the overall dataset. This step is critical to ensuring the representativeness and validity of the analyses conducted on the sub-sample.
+These steps are essential to ensure the data is not only clean but also structured in a way that allows for accurate and meaningful analysis of moral decision-making across different legal systems.
+
+4_Data_Integration_and_Transformation
+Data Merging: Cleaned datasets from the Moral Machine Experiment and ODB are integrated, linking moral decision-making data with legal system categories.
+Feature Engineering: Additional features are derived from existing data to capture underlying patterns more effectively. For instance, 'legal_system_weight', a composite score based on the frequency and type of responses per legal system, is calculated to gauge the influence of legal frameworks on moral decisions.
+
+5_Experimental_Setup
+Training and Testing Splits: Data is split into training and test sets using a 75:25 ratio to ensure both the robust training of models and the ability to generalize findings to unseen data.
+Algorithm Selection: Based on the analysis requirements, multiple machine learning models including Logistic Regression, Decision Tree / Random forest and Neural Networks are prepared for deployment. This selection allows for a comparison of performance across simple and complex algorithms.
+
+6_Model_Training_and_Evaluation
+Random_state: For consistency in the data before performing ML algorithms set the random_state = 42.
+Model Training: Each selected model is trained on the dataset, employing cross-validation techniques to optimize parameters and prevent overfitting.
+Hyperparameter tuning: Adjust the parameters of each ML model to see what is the best parameter, using gridsearch.
+Performance Metrics: Models are evaluated based on accuracy, precision, recall, and F1-score to assess their predictive performance comprehensively. Additional metrics such as AUC-ROC are considered for models where probability outputs are critical.
+
+7_Data_Visualisations
+In DD_Figures an overview is created of the different data visualisations. Its been chosen to use a wide variety of figures/tables and diagrams.
