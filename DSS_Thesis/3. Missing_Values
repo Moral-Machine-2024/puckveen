@@ -1,0 +1,43 @@
+#Missing Values
+
+There are several columns with null values:
+default_choice [1,201,814 missing] - Default choice is dependent of the different scenario types. For instance, Gender has the default choice of Male. The default choice will be used/dropped from further processing.
+nondefault_choice [1,201,814 missing] Non-default choice is dependent of the different scenario types. For instance, Gender has the non-default choice of Female. The default choice will be used/dropped from further processing.
+default_choice_is_omission [1,201,814 missing] - With omission it is refered to an intervention of 0, while the default choice is already given in the default_choice column. However when omission is 1, the characters associated with the default choice will be faced the deathful option in the dilemma. Meaning: they will be killed when the car does not intervene. So 0 means no intervention in the dilemma of the car and 1 means there is intervention.
+template [398 missing] - The template refers to the template used during the survey. Which is not relevant for further processing.
+description_shown [398 missing] - The description shown refers to the description of the dilemma. Which is not relevant for further processing.
+left_hand [398 missing] - Refers to the hand used while filling in the survey. For the scope of the research this will be dropped since it does not carry any relevance.
+user_country3 [41,641 missing] - The ISO-3 codes of countries are given, based on the country from which the participant filled in the survey.
+review_age [1,360,030 missing] - Review age shows the age in a rounded number for instance: 16.0. In other research this variable was some times used and some times not. As a comprise, we can use this variable as a binned categorical feature instead
+
+
+df_survey.isnull().sum()
+response_id                       0
+extended_session_id               0
+user_id                           0
+scenario_order                    0
+intervention                      0
+pedped                            0
+barrier                           0
+crossing_signal                   0
+attribute_level                   0
+scenario_type_strict              0
+scenario_type                     0
+default_choice                31694
+non_default_choice            31694
+default_choice_is_omission    31694
+number_of_characters              0
+diff_number_of_characters         0
+saved                             0
+template                         12
+description_shown                12
+left_hand                        12
+user_country3                   233
+review_age                    35387
+review_education                  0
+review_gender                     0
+review_income                     0
+review_political                  0
+review_religious                  0
+dtype: int64
+
