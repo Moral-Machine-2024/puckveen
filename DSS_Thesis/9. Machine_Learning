@@ -1,0 +1,459 @@
+Machine Learning Algorithms
+
+Applying the learning models in order to train the machine.
+Importing necessary libraries and models
+[ ]
+ from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.preprocessing import LabelEncoder
+import joblib
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
+from sklearn.decomposition import PCA
+from sklearn.tree import DecisionTreeClassifier
+import numpy as np
+import gc
+from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+Random state is 42, constant number in order to ensure model consistancy between runs.
+[ ]
+ np.random.seed(42)
+Selecting input and output columns
+
+[ ]
+ inp_cols = ['scenario_order',
+       'intervention', 'pedped', 'barrier', 'crossing_signal',
+       'attribute_level', 'scenario_type_strict', 'scenario_type',
+       'diff_number_of_characters','user_country3','binned_age']
+out_cols = ['saved']
+
+x = df_survey[inp_cols]
+y = df_survey[out_cols]
+x
+
+Applying an encoder for converting categorical values into numbers
+
+This is necessart because the model accept only numbers
+[ ]
+ encoder = LabelEncoder()
+x['intervention'] = encoder.fit_transform(x['intervention'])
+x['pedped'] = encoder.fit_transform(x['pedped'])
+x['barrier'] = encoder.fit_transform(x['barrier'])
+x['attribute_level'] = encoder.fit_transform(x['attribute_level'])
+x['scenario_type_strict'] = encoder.fit_transform(x['scenario_type_strict'])
+x['scenario_type'] = encoder.fit_transform(x['scenario_type'])
+x['user_country3'] = encoder.fit_transform(x['user_country3'])
+x['binned_age'] = encoder.fit_transform(x['binned_age'])
+x.tail(20)
+
+[ ]
+ y['saved'] = encoder.fit_transform(y['saved'])
+<ipython-input-77-3527fb4b9289>:1: SettingWithCopyWarning:
+
+
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+
+[ ]
+ cols = x.columns
+Applying normalizing to the the data
+
+Meaning that all numbers will be in between of 0 or 1
+[ ]
+ from sklearn.preprocessing import MinMaxScaler, StandardScaler
+scaler = MinMaxScaler()
+x_scaled = scaler.fit_transform(x)
+x_scaled = pd.DataFrame(x_scaled,columns=cols)
+x_scaled.head()
+
+Splitting data into two parts, training and testing for both x and y
+
+[ ]
+ X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+The Baseline ML model: Logistic Regression
+
+[ ]
+ lg_params = {
+    "penalty": ["l1", "l2"],
+    "solver": ["liblinear"],
+    "C": [0.0001, 0.001, 0.01, 0.1, 0.5, 1]
+}
+[ ]
+ model_LR = LogisticRegression()
+lg_gridsearch = RandomizedSearchCV(
+    model_LR, lg_params, random_state=42, cv=5, scoring="accuracy"
+    )
+lg_gridsearch.fit(X_train, np.ravel(y_train))
+y_pred = lg_gridsearch.best_estimator_.predict(X_test)
+accuracy = accuracy_score(y_test, np.ravel(y_pred))
+print(f'logistic regression Accuracy: {accuracy:.2f}')
+# classification report
+print("\nClassification Report:\n", classification_report(y_test, np.ravel(y_pred)))
+
+# confusion matrix
+conf_matrix = confusion_matrix(y_test, np.ravel(y_pred))
+print("Confusion Matrix:\n", conf_matrix)
+
+#joblib.dump(model_LR, '/content/drive/My Drive/trained_models_feature_selection/logistic_regression.pkl')
+print(lg_gridsearch.best_params_)
+del lg_gridsearch
+logistic regression Accuracy: 0.56
+
+Classification Report:
+               precision    recall  f1-score   support
+
+           0       0.56      0.76      0.65     30702
+           1       0.53      0.31      0.39     26371
+
+    accuracy                           0.56     57073
+   macro avg       0.55      0.54      0.52     57073
+weighted avg       0.55      0.56      0.53     57073
+
+Confusion Matrix:
+ [[23417  7285]
+ [18106  8265]]
+{'solver': 'liblinear', 'penalty': 'l1', 'C': 0.5}
+Result of the second ML model: accuracy of 0.55
+Applying the first ML model: Decision tree classifier
+
+[ ]
+ DT_params = {
+    "criterion": ["gini", "entropy"],  # Measures the quality of a split
+    "splitter": ["best", "random"],    # Strategy used to choose the split at each node
+    "max_depth": [None, 10, 20, 30, 40, 50],  # Maximum depth of the tree
+    "min_samples_split": [2, 5, 10, 20],  # Minimum number of samples required to split an internal node
+    "min_samples_leaf": [1, 2, 5, 10],  # Minimum number of samples required to be at a leaf node
+    "max_features": [None, "auto", "sqrt", "log2"],  # Number of features to consider when looking for the best split
+    "max_leaf_nodes": [None, 10, 20, 30, 40, 50],  # Maximum number of terminal nodes or leaves in a tree
+}
+[ ]
+ model_DT = DecisionTreeClassifier()
+DT_gridsearch = RandomizedSearchCV(
+    model_DT, DT_params, random_state=42, cv=5, scoring="accuracy"
+    )
+DT_gridsearch.fit(X_train, np.ravel(y_train))
+y_pred = DT_gridsearch.best_estimator_.predict(X_test)
+
+model_DT.fit(X_train, np.ravel(y_train))
+y_pred = DT_gridsearch.best_estimator_.predict(X_test)
+accuracy = accuracy_score(y_test, np.ravel(y_pred))
+print(f'Decision Tree Accuracy: {accuracy:.2f}')
+# classification report
+print("\nClassification Report:\n", classification_report(y_test, np.ravel(y_pred)))
+
+# confusion matrix
+conf_matrix = confusion_matrix(y_test, np.ravel(y_pred))
+print("Confusion Matrix:\n", conf_matrix)
+
+#joblib.dump(model, '/content/drive/My Drive/trained_models_feature_selection/decision_tree_model.pkl')
+print(DT_gridsearch.best_params_)
+del DT_gridsearch
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+/usr/local/lib/python3.10/dist-packages/sklearn/tree/_classes.py:269: FutureWarning:
+
+`max_features='auto'` has been deprecated in 1.1 and will be removed in 1.3. To keep the past behaviour, explicitly set `max_features='sqrt'`.
+
+Decision Tree Accuracy: 0.73
+
+Classification Report:
+               precision    recall  f1-score   support
+
+           0       0.74      0.77      0.76     30702
+           1       0.72      0.68      0.70     26371
+
+    accuracy                           0.73     57073
+   macro avg       0.73      0.73      0.73     57073
+weighted avg       0.73      0.73      0.73     57073
+
+Confusion Matrix:
+ [[23758  6944]
+ [ 8308 18063]]
+{'splitter': 'best', 'min_samples_split': 20, 'min_samples_leaf': 2, 'max_leaf_nodes': None, 'max_features': None, 'max_depth': 10, 'criterion': 'entropy'}
+Result of first ML model: an accuracy of 0.67
+Memory management with garbage collection
+[ ]
+ gc.collect()
+7667
+Applying the second ML Model: Random Forest
+
+[ ]
+ RF_params = {
+    'n_estimators': [50,100],  # Number of trees in the forest
+    'max_depth': [None, 10, 20],    # Maximum number of levels in each tree
+    'min_samples_split': [2, 5, 10],    # Minimum number of samples required to split a node
+    'min_samples_leaf': [1, 2, 5],          # Minimum number of samples required at each leaf node
+    'max_features': ['auto', 'sqrt']    # Number of features to consider at every split
+}
+[ ]
+ model_RF = RandomForestClassifier(random_state=42)
+RF_gridsearch = RandomizedSearchCV(
+    model_RF, RF_params, n_iter=50, random_state=42, cv=5, scoring="accuracy", n_jobs=2, verbose=1
+)
+RF_gridsearch.fit(X_train, np.ravel(y_train))
+y_pred = RF_gridsearch.best_estimator_.predict(X_test)
+accuracy = accuracy_score(y_test, np.ravel(y_pred))
+print(f'Random Forest Accuracy: {accuracy:.2f}')
+
+# Classification report
+print("\nClassification Report:\n", classification_report(y_test, np.ravel(y_pred)))
+
+# Confusion matrix
+conf_matrix = confusion_matrix(y_test, np.ravel(y_pred))
+print("Confusion Matrix:\n", conf_matrix)
+
+# save the model
+# joblib.dump(RF_gridsearch.best_estimator_, '/content/drive/My Drive/trained_models_feature_selection/random_forest_model.pkl')
+
+# Display the best parameters
+print("Best Parameters:\n", RF_gridsearch.best_params_)
+del RF_gridsearch
+Fitting 5 folds for each of 50 candidates, totalling 250 fits
+Random Forest Accuracy: 0.73
+
+Classification Report:
+               precision    recall  f1-score   support
+
+           0       0.74      0.79      0.76     30702
+           1       0.73      0.67      0.70     26371
+
+    accuracy                           0.73     57073
+   macro avg       0.73      0.73      0.73     57073
+weighted avg       0.73      0.73      0.73     57073
+
+Confusion Matrix:
+ [[24215  6487]
+ [ 8721 17650]]
+Best Parameters:
+ {'n_estimators': 100, 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt', 'max_depth': 10}
+Result from the second ML model: accuracy of 0.73
+Applying the third ML model: Neural Network MLPclassfier (multi layer perceptron)
+
+[ ]
+ NN_params =  {
+    "hidden_layer_sizes": [(50,), (100,), (100, 50), (100, 100), (50, 50, 50)],
+    "activation": ["logistic", "tanh", "relu"],
+    "solver": ["sgd", "adam"],
+    "alpha": [0.0001, 0.001, 0.01, 0.1],
+    "learning_rate": ["constant", "invscaling", "adaptive"],
+    "learning_rate_init": [0.001, 0.01, 0.1],
+    "max_iter": [200, 500, 1000],
+    "momentum": [0.9, 0.95, 0.99],
+    "early_stopping": [False, True],
+    "validation_fraction": [0.1, 0.2]
+}
+[ ]
+ model_NN = MLPClassifier()
+NN_gridsearch = RandomizedSearchCV(
+    model_NN, NN_params, random_state=42, cv=5, scoring="accuracy"
+    )
+NN_gridsearch.fit(X_train, np.ravel(y_train))
+y_pred = NN_gridsearch.best_estimator_.predict(X_test)
+
+model_NN = MLPClassifier(hidden_layer_sizes=(100,), max_iter=1000, random_state=42)
+model_NN.fit(X_train, np.ravel(y_train))
+
+# Evaluate the model's accuracy on the test data
+y_pred = NN_gridsearch.best_estimator_.predict(X_test)
+accuracy = accuracy_score(y_test, np.ravel(y_pred))
+print(f'Neural Network Accuracy: {accuracy:.2f}')
+# classification report
+print("\nClassification Report:\n", classification_report(y_test, np.ravel(y_pred)))
+
+# confusion matrix
+conf_matrix = confusion_matrix(y_test, np.ravel(y_pred))
+print("Confusion Matrix:\n", conf_matrix)
+
+# # Save the trained model
+#joblib.dump(model_NN, '/content/drive/My Drive/trained_models_feature_selection/neural_network.pkl')
+
+# Delete the model object to free up memory
+print(NN_gridsearch.best_params_)
+del model_NN
+del NN_gridsearch
+Neural Network Accuracy: 0.73
+
+Classification Report:
+               precision    recall  f1-score   support
+
+           0       0.74      0.79      0.76     30702
+           1       0.73      0.67      0.70     26371
+
+    accuracy                           0.73     57073
+   macro avg       0.73      0.73      0.73     57073
+weighted avg       0.73      0.73      0.73     57073
+
+Confusion Matrix:
+ [[24166  6536]
+ [ 8612 17759]]
+{'validation_fraction': 0.2, 'solver': 'adam', 'momentum': 0.9, 'max_iter': 1000, 'learning_rate_init': 0.001, 'learning_rate': 'adaptive', 'hidden_layer_sizes': (100, 100), 'early_stopping': True, 'alpha': 0.0001, 'activation': 'tanh'}
+Result from the third ML model: accuracy of 0.73
+Applying the fourth ML model: KNN
+
+[ ]
+ KNN_params = {
+    'n_neighbors': [3, 5, 7, 10, 15, 20],
+    'weights': ['uniform', 'distance'],
+    'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
+    'leaf_size': [10, 20, 30, 40, 50],
+    'p': [1, 2]  # p=1 corresponds to Manhattan distance, p=2 corresponds to Euclidean distance
+}
+[ ]
+ model_KNN = KNeighborsClassifier()
+KNN_gridsearch = RandomizedSearchCV(
+    model_KNN, KNN_params, n_iter=50, random_state=42, cv=5, scoring="accuracy", n_jobs=-1, verbose=1
+)
+
+KNN_gridsearch.fit(X_train, np.ravel(y_train))
+y_pred = KNN_gridsearch.best_estimator_.predict(X_test)
+accuracy = accuracy_score(y_test, np.ravel(y_pred))
+print(f'K-Nearest Neighbors Accuracy: {accuracy:.2f}')
+
+# Classification report
+print("\nClassification Report:\n", classification_report(y_test, np.ravel(y_pred)))
+
+# Confusion matrix
+conf_matrix = confusion_matrix(y_test, np.ravel(y_pred))
+print("Confusion Matrix:\n", conf_matrix)
+
+# save the model
+# joblib.dump(KNN_gridsearch.best_estimator_, '/path_to_save_model/knn_model.pkl')
+
+# Display the best parameters
+print("Best Parameters:\n", KNN_gridsearch.best_params_)
+del KNN_gridsearch
+Fitting 5 folds for each of 50 candidates, totalling 250 fits
+K-Nearest Neighbors Accuracy: 0.71
+
+Classification Report:
+               precision    recall  f1-score   support
+
+           0       0.71      0.78      0.74     30702
+           1       0.71      0.62      0.66     26371
+
+    accuracy                           0.71     57073
+   macro avg       0.71      0.70      0.70     57073
+weighted avg       0.71      0.71      0.71     57073
+
+Confusion Matrix:
+ [[24085  6617]
+ [ 9979 16392]]
+Best Parameters:
+ {'weights': 'uniform', 'p': 1, 'n_neighbors': 20, 'leaf_size': 10, 'algorithm': 'brute'}
+Result from the fourth ML model: accuracy of 0.71
+
+
+n between conclusion: as shown in the bar chart. The accuracy score of the Neural Network is the highest from the classifiers
+
+I achieved the same accuracy with and without normalization, so decided to use Principal Component Analysis (PCA). PCA helps us simplify the input variables. It does this by combining variables that are related to each other into a single variable. For instance, if two variables can be used to calculate each other, PCA will merge them into one.
+Applying PCA
+[ ]
+ pca = PCA(random_state=42)
+X_train_pca = pca.fit_transform(X_train)
+
+# Plot explained variance ratio
+plt.figure(figsize=(10, 6))
+plt.plot(range(1, pca.n_components_ + 1), pca.explained_variance_ratio_.cumsum(), marker='o', linestyle='--')
+plt.title('Explained Variance Ratio by Number of Components')
+plt.xlabel('Number of Components')
+plt.ylabel('Explained Variance Ratio')
+plt.grid(True)
+plt.show()
+
+# Determine the optimal number of components using the elbow method
+cumulative_variance_ratio = pca.explained_variance_ratio_.cumsum()
+optimal_components = 0
+for i, ratio in enumerate(cumulative_variance_ratio):
+    if ratio >= 0.95:  # Adjust this threshold as needed
+        optimal_components = i + 1
+        break
+
+print(f'Optimal number of components: {optimal_components}')
+
+Result from PCA: the optimal number of components, as presented in the graph, is 3. In order to make sure the data is tested properly, I also decided to test 4 and 5.
+[ ]
+ X_train_pca_df = pd.DataFrame(X_train_pca,columns=cols)
+[ ]
+ pca = PCA(n_components=5, random_state=42)
+X_train_pca = pca.fit_transform(X_train)
+X_test_pca = pca.transform(X_test)
+
+    # Initialize and train the MLP classifier
+model = MLPClassifier(hidden_layer_sizes=(100,), max_iter=1000, random_state=42)
+model.fit(X_train_pca, np.ravel(y_train))
+
+    # Make predictions
+y_pred = model.predict(X_test_pca)
+
+    # Calculate accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print(f'Neural Network Accuracy with {4} PCA components: {accuracy:.2f}')
+Neural Network Accuracy with 4 PCA components: 0.69
+[ ]
+pca = PCA(n_components=5, random_state=42)X_train_pca = pca.fit_transform(X_train)X_test_pca = pca.transform(X_test)    # Initialize and train the MLP classifiermodel = MLPClassifier(hidden_layer_sizes=(100,), max_iter=1000, random_state=42)model.fit(X_train_pca, np.ravel(y_train))    # Make predictionsy_pred = model.predict(X_test_pca)    # Calculate accuracyaccuracy = accuracy_score(y_test, y_pred)print(f'Neural Network Accuracy with {5} PCA components: {accuracy:.2f}')
+
+Neural Network Accuracy with 5 PCA components: 0.69
+With PCA, I noticed a decrease in accuracy, indicating that there are no linear combinations among the data variables.
+Consequently, the model I have chosen as the final result is saved without PCA, under the file name 'neural_network.pkl'
