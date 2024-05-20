@@ -1,0 +1,256 @@
+#Data Representability
+
+Data Representability
+
+How representable is the data?
+
+Analyze 'Age' and 'Gender'
+Gender
+
+The reported gender of people in the survey was:
+Reported Gender	Count
+male	295,367
+female	114,525
+default	42,513
+others	10,079
+In terms of further processing Gender, a previous paper has used the gender as is. Will not process this further.
+[ ]
+(    df_survey    .groupby([CleanSurveyColumns.user_id, CleanSurveyColumns.review_gender], as_index=False)    [CleanSurveyColumns.extended_session_id]    .size()    .groupby(CleanSurveyColumns.review_gender, as_index=False)    [CleanSurveyColumns.user_id]    .count())
+
+
+Age
+
+There are 65,919 users who are under the age 16 and will be considered as minors.
+There are 1,330 users who have invalid age (over 100). These users will be removed from further processing.
+There are 53,513 users who have not listed their age and be considered as age=missing.
+Looking at the distribution, there is a heavy right skew in the data, with majority of the respondents tending to be younger. This makes sense, given that the survey was done online and was mainly diseminated through Redit.
+[ ]
+ # Replace infinite values with NaNs
+df_survey[CleanSurveyColumns.review_age] = df_survey[CleanSurveyColumns.review_age].replace([np.inf, -np.inf], np.nan)
+
+# Apply age category function to create 'binned_age' column
+df_survey["binned_age"] = df_survey[CleanSurveyColumns.review_age].apply(check_age_category)
+
+# Convert 'binned_age' column to categorical type
+df_survey["binned_age"] = df_survey["binned_age"].astype(age_categories)
+
+# Create age_bins DataFrame with specified column names
+age_bins = (
+    df_survey["binned_age"]
+    .value_counts()
+    .reset_index(name="count")
+    .sort_index()
+    .rename(columns={"index": "age_bin"})
+)
+age_bins.rename(columns={'binned_age': 'age_bin', 'count': 'count'}, inplace=True)
+# Print the first few rows and data types of age_bins
+print(age_bins.head())
+print(age_bins.info())
+
+             age_bin  count
+0  between_16_and_20  73015
+1  between_21_and_25  55090
+2           under_16  44112
+3  between_26_and_30  35293
+4  between_31_and_35  22017
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 20 entries, 0 to 19
+Data columns (total 2 columns):
+ #   Column   Non-Null Count  Dtype   
+---  ------   --------------  -----   
+ 0   age_bin  20 non-null     category
+ 1   count    20 non-null     int64   
+dtypes: category(1), int64(1)
+memory usage: 1.0 KB
+None
+[ ]
+ age_counts = df_survey[~df_survey[CleanSurveyColumns.user_id].duplicated(keep="first")].copy()
+age_counts[CleanSurveyColumns.review_age] = age_counts[CleanSurveyColumns.review_age].fillna(-1)
+age_counts["binned_age"] = age_counts[CleanSurveyColumns.review_age].apply(check_age_category)
+age_counts["binned_age"] = age_counts["binned_age"].astype(age_categories)
+Data Visualisation
+[ ]
+ sns.set_style("whitegrid")
+
+ax = sns.barplot(age_bins, y="age_bin", x="count", orient="y")
+ax.bar_label(ax.containers[0], fontsize=7)
+ax.set(xlabel='', ylabel='')
+ax.set_title("Count Age per Bin")
+new_yticklabels = [
+    "Missing",
+    "Under 16",
+    "16 to 20",
+    "21 to 25",
+    "26 to 30",
+    "31 to 35",
+    "36 to 40",
+    "41 to 45",
+    "46 to 50",
+    "51 to 55",
+    "56 to 60",
+    "61 to 65",
+    "66 to 70",
+    "71 to 75",
+    "76 to 80",
+    "81 to 85",
+    "86 to 90",
+    "91 to 95",
+    "96 to 100",
+    "Invalid"
+    ]
+ax.set_yticklabels(new_yticklabels)
+ax.set_xlim(0, 130_000)
+plt.show()
+
+Decision on users with invalid age.
+
+Removing Users with invalid age - over 100.
+[ ]
+ invalid_age_users = age_counts[age_counts["binned_age"] == "invalid"][CleanSurveyColumns.user_id]
+
+df_survey = df_survey[~df_survey[CleanSurveyColumns.user_id].isin(invalid_age_users)]
+User Countries
+
+There are in total 215 ISO codes with responses and 1 for missing countries, to a total of 216 unique iso3 items.
+There were 403 users who did not specify their country.
+In the ODB dataset, there are only 86 countries. After filtering for this, the total amount of user responses per cluster in the ODB dataset is:
+Cluster	Count Users
+Capacity constrained	15824
+Emerging and advancing	147144
+High capacity	275607
+One sided initiative	3430
+The majority of the users came from the US and Brazil.
+[ ]
+ df_survey.tail()
+
+[ ]
+ # Check if the category 'missing' already exists in the column
+if 'missing' not in df_survey[CleanSurveyColumns.user_country3].cat.categories:
+    # Add the 'missing' category
+    df_survey[CleanSurveyColumns.user_country3] = df_survey[CleanSurveyColumns.user_country3].cat.add_categories(["missing"])
+
+<ipython-input-53-1ae840b63414>:4: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  df_survey[CleanSurveyColumns.user_country3] = df_survey[CleanSurveyColumns.user_country3].cat.add_categories(["missing"])
+[ ]
+ df_survey[CleanSurveyColumns.user_country3] = df_survey[CleanSurveyColumns.user_country3].fillna("missing")
+<ipython-input-54-bbae0e1b2d75>:1: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  df_survey[CleanSurveyColumns.user_country3] = df_survey[CleanSurveyColumns.user_country3].fillna("missing")
+[ ]
+ iso_3_countries_counts = df_survey[~df_survey[CleanSurveyColumns.user_id].duplicated(keep="first")].copy()
+iso_3_countries_counts = iso_3_countries_counts.groupby(CleanSurveyColumns.user_country3, as_index=False)[CleanSurveyColumns.user_id].count()
+[ ]
+ iso_3_countries_counts.iloc[np.r_[0:5, -5:0]].rename(columns={"user_id": "Count Users"})
+
+[ ]
+ users_cluster = (
+    df_odb_ranking[["ISO3", "Country", "Cluster"]]
+    .merge(iso_3_countries_counts, left_on="ISO3", right_on="user_country3")
+    .groupby("Cluster", as_index=False)
+    ["user_id"].sum()
+    .rename(columns={"user_id": "Count Users"})
+)
+Data Visualisation
+[ ]
+ ax = sns.barplot(users_cluster, y="Cluster", x="Count Users", orient="y")
+ax.set_title("Count Users Per Cluser")
+ax.bar_label(ax.containers[0], fontsize=7)
+ax.set(ylabel="", xlabel="")
+ax.set_xlim(0, 20000)
+plt.show()
+
+[ ]
+ count_countries_per_cluster = (
+    df_odb_ranking[["ISO3", "Country", "Cluster"]]
+    .merge(iso_3_countries_counts, left_on="ISO3", right_on="user_country3")
+    .groupby("Cluster", as_index=False)
+    ["Country"].count()
+    .rename(columns={"Country": "Count Countries"})
+)
+Data visualisation
+[ ]
+ ax = sns.barplot(count_countries_per_cluster, y="Cluster", x="Count Countries", orient="y")
+ax.set_title("Count Countries Per Cluser")
+ax.bar_label(ax.containers[0], fontsize=7)
+ax.set(ylabel="", xlabel="")
+plt.show()
+
+[ ]
+ count_users = (
+     df_odb_ranking[["ISO3", "Country", "Cluster"]]
+    .merge(iso_3_countries_counts, left_on="ISO3", right_on="user_country3")
+    .rename(columns={"user_id": "Count Users"})
+)
+
+fig = px.choropleth(
+    count_users,
+    locations="ISO3",
+    color="Count Users",
+    hover_name="Country",
+    color_continuous_scale=px.colors.sequential.OrRd
+  )
+fig.show()
+
+#Show Michal my cool map, think he'll like it.
+
+Decision on Countries
+
+Removing Users in countries outside the ones in the ODB dataset.
+
+[ ]
+ df_survey = df_survey[df_survey[CleanSurveyColumns.user_country3].isin(count_users["ISO3"])]
+Binding Together user demography information.
+
+[ ]
+ user_demographic_info = df_survey[~df_survey[CleanSurveyColumns.user_id].duplicated(keep="first")].copy()
+[ ]
+ user_demographic_info = user_demographic_info.loc[:, [
+    CleanSurveyColumns.user_id,
+    CleanSurveyColumns.response_id,
+    CleanSurveyColumns.review_age,
+    CleanSurveyColumns.review_education,
+    CleanSurveyColumns.review_gender,
+    CleanSurveyColumns.review_income,
+    CleanSurveyColumns.review_political,
+    CleanSurveyColumns.review_religious,
+    ]]
+[ ]
+ df_survey = df_survey.sort_values([CleanSurveyColumns.user_id, CleanSurveyColumns.response_id])
+[ ]
+ df_survey.head()
+
+[ ]
+ df_survey.shape
+(285364, 22)
+[ ]
+ df_survey.columns
+Index(['response_id', 'extended_session_id', 'user_id', 'scenario_order',
+       'intervention', 'pedped', 'barrier', 'crossing_signal',
+       'attribute_level', 'scenario_type_strict', 'scenario_type',
+       'number_of_characters', 'diff_number_of_characters', 'saved',
+       'user_country3', 'review_age', 'review_education', 'review_gender',
+       'review_income', 'review_political', 'review_religious', 'binned_age'],
+      dtype='object')
+[ ]
+ df_survey.scenario_order
+155476     5
+155477     9
+155478     1
+155479     8
+155480     2
+          ..
+299924     9
+299925    11
+299926     2
+299927     8
+299928     6
+Name: scenario_order, Length: 285364, dtype: int16
+[ ]
+ filtered_scenario_order = df_survey[df_survey['scenario_order'].isin([11, 12, 13])]
