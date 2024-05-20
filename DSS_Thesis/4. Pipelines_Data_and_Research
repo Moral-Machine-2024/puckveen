@@ -1,0 +1,147 @@
+!pip install plantuml
+from plantuml import PlantUML
+plantuml_server = PlantUML(url='http://www.plantuml.com/plantuml/img/')
+
+!pip install diagrams
+!pip install graphviz
+
+from graphviz import Digraph
+
+dot = Digraph(comment='Data Processing Pipeline')
+
+dot.node('A', 'Load MM Data')
+dot.node('B', 'Enrich with ODB Data')
+dot.node('C', 'Preprocess Data')
+dot.node('D', 'Check Data Validity')
+dot.node('E', 'Handle Missing Values')
+dot.node('F', 'Encode Variables')
+dot.node('G', 'Split Data')
+dot.node('H', 'Train Models')
+dot.node('I', 'Evaluate Models')
+dot.node('J', 'Save Best Model')
+
+dot.edges(['AB', 'BC'])
+dot.edge('C', 'D', label='Check Validity')
+dot.edge('D', 'E', label='Valid', constraint='true')
+dot.edge('E', 'F')
+dot.edge('F', 'G')
+dot.edge('G', 'H')
+dot.edge('H', 'I')
+dot.edge('I', 'J')
+
+# Render and display the diagram
+dot.render('output/pipeline_diagram', format='png', cleanup=True)
+dot
+
+
+from diagrams import Diagram, Cluster, Edge
+from diagrams.generic.blank import Blank
+from diagrams.generic.os import IOS
+from diagrams.generic.compute import Rack
+from diagrams.generic.database import SQL
+from diagrams.generic.storage import Storage
+
+with Diagram("Data Processing Pipeline", show=False, direction="TB"):
+    start = Blank("Start")
+
+    with Cluster("Data Load and Enrich"):
+        load_mm_data = Rack("Load MM Data")
+        enrich_data = Rack("Enrich with ODB Data")
+
+    with Cluster("Data Validation and Preprocessing"):
+        check_data = SQL("Check Data Validity")
+        handle_missing = SQL("Handle Missing Values")
+        encode_vars = SQL("Encode Variables")
+
+    with Cluster("Model Training and Evaluation"):
+        split_data = Storage("Split Data")
+        train_models = Rack("Train Models")
+        evaluate_models = Rack("Evaluate Models")
+        save_model = Rack("Save Best Model")
+
+    end = Blank("End")
+
+    start >> load_mm_data >> enrich_data >> check_data
+    check_data >> Edge(color="green", style="dotted", label="Valid") >> handle_missing
+    check_data >> Edge(color="red", style="bold", label="Invalid") >> start
+    handle_missing >> encode_vars >> split_data >> train_models >> evaluate_models >> save_model >> end
+
+# To display the diagram within Jupyter
+from IPython.display import Image
+Image(filename='data_processing_pipeline.png')
+
+from graphviz import Digraph
+
+def create_activity_diagram_two():
+    dot = Digraph(comment='Activity Diagram', node_attr={'shape': 'box'})
+
+    # Activity nodes
+    dot.node('Start', 'Research Literature Gap', shape='ellipse')
+    dot.node('Step1', 'Analyse the Moral Machine Experiment')
+    dot.node('Step2', 'Search for related work')
+    dot.node('Step3', 'Enrich with ODB data')
+    dot.node('Decision', 'Societal Relevance', shape='diamond')
+    dot.node('Step4', 'Try Again', style='filled', fillcolor='red')
+    dot.node('Step5', 'Formulate RQ and Search ML algorithms')
+    dot.node('Decision2', 'Scientific Relevance', shape='diamond')
+    dot.node('End', 'Continue Working on Thesis', shape='ellipse')
+
+    # Connecting edges
+    dot.edge('Start', 'Step1')
+    dot.edge('Step1', 'Step2')
+    dot.edge('Step2', 'Step3')
+    dot.edge('Step3', 'Decision')
+    dot.edge('Decision', 'Step4', label='No')
+    dot.edge('Decision', 'Decision2', label='Yes')
+    #dot.edge('Decision', 'Decision2')
+    dot.edge('Decision2', 'Step4', label='No')
+    dot.edge('Decision2', 'Step5', label='Yes')
+    dot.edge('Step4', 'Start')
+    dot.edge('Step5', 'End')
+
+    # Render and display within Jupyter
+    dot.format = 'png'
+    return dot.render('activity_diagram', directory='content', view=True, cleanup=True)
+
+create_activity_diagram_two()
+
+
+from IPython.display import Image, display
+
+# Display the generated diagram
+image_path = create_activity_diagram_two()  # This will also print the path as a side-effect
+display(Image(filename=image_path))
+
+import matplotlib.pyplot as plt
+from matplotlib_venn import venn2, venn2_circles
+
+# Define the sets
+legal_systems = 50  # Placeholder value
+moral_decision_making = 40  # Placeholder value
+overlap = 20  # Placeholder value
+
+# Create the Venn diagram
+plt.figure(figsize=(8, 8))
+venn = venn2(subsets=(legal_systems, moral_decision_making, overlap),
+             set_labels=('Legal Systems', 'Moral Decision-Making'))
+
+# Add circles around the sets
+venn2_circles(subsets=(legal_systems, moral_decision_making, overlap), linestyle='solid')
+
+# Add text labels for the overlap
+plt.text(0, 0, 'Research Gap:\nRelationship', fontsize=11, ha='center', va='center')
+plt.text(0.3, 0.3, 'Legal Systems \n ODB dataset', fontsize= 12, ha='center', va='center')
+plt.text(-0.3, 0.3, '\n Moral Decision-Making \n MM dataset', fontsize=12, ha='center', va='center')
+
+# Remove numbers
+for text in venn.set_labels:
+    text.set_text("")
+
+# Remove numbers inside the circles
+for text in venn.subset_labels:
+    text.set_text("")
+
+# Display the plot
+plt.title("Relationship between Legal Systems and Moral Decision-Making")
+plt.show()
+
