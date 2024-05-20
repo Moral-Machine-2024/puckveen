@@ -1,0 +1,278 @@
+#Import packages
+!pip install python-dotenv
+!pip install pycountry_convert
+
+from dotenv import load_dotenv
+import os
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+import plotly.express as px
+import scipy
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.dummy import DummyRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+import scipy.stats as stats
+import matplotlib.pyplot as plt
+from statsmodels.graphics.gofplots import qqplot
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+#Utility Functions
+class CleanCountriesChangeColumns:
+
+  iso3 = 'iso3'
+  omission_commission_estimates = 'omission_commission_estimates'
+  passengers_pedestrians_estimates = 'passengers_pedestrians_estimates'
+  law_illegal_legal_estimates = 'law_illegal_legal_estimates'
+  gender_male_female_estimates = 'gender_male_female_estimates'
+  fitness_large_fit_estimates = 'fitness_large_fit_estimates'
+  social_status_low_high_estimates = 'social_status_low_high_estimates'
+  age_elderly_young_estimates = 'age_elderly_young_estimates'
+  num_characters_less_more_estimates = 'num_characters_less_more_estimates'
+  species_pets_humans_estimates = 'species_pets_humans_estimates'
+  omission_commission_se = 'omission_commission_se'
+  passengers_pedestrians_se = 'passengers_pedestrians_se'
+  law_illegal_legal_se = 'law_illegal_legal_se'
+  gender_male_female_se = 'gender_male_female_se'
+  fitness_large_fit_se = 'fitness_large_fit_se'
+  social_status_low_high_se = 'social_status_low_high_se'
+  age_elderly_young_se = 'age_elderly_young_se'
+  num_characters_less_more_se = 'num_characters_less_more_se'
+  species_pets_humans_se = 'species_pets_humans_se'
+
+  @classmethod
+  def convert_columns_to_clean_columns(cls):
+    return {
+      "Unnamed: 0": cls.iso3,
+      "[Omission -> Commission]: Estimates": cls.omission_commission_estimates,
+      "[Passengers -> Pedestrians]: Estimates": cls.passengers_pedestrians_estimates,
+      "Law [Illegal -> Legal]: Estimates": cls.law_illegal_legal_estimates,
+      "Gender [Male -> Female]: Estimates": cls.gender_male_female_estimates,
+      "Fitness [Large -> Fit]: Estimates": cls.fitness_large_fit_estimates,
+      "Social Status [Low -> High]: Estimates": cls.social_status_low_high_estimates,
+      "Age [Elderly -> Young]: Estimates": cls.age_elderly_young_estimates,
+      "No. Characters [Less -> More]: Estimates": cls.num_characters_less_more_estimates,
+      "Species [Pets -> Humans]: Estimates": cls.species_pets_humans_estimates,
+      "[Omission -> Commission]: se": cls.omission_commission_se,
+      "[Passengers -> Pedestrians]: se": cls.passengers_pedestrians_se,
+      "Law [Illegal -> Legal]: se": cls.law_illegal_legal_se,
+      "Gender [Male -> Female]: se": cls.gender_male_female_se,
+      "Fitness [Large -> Fit]: se": cls.fitness_large_fit_se,
+      "Social Status [Low -> High]: se": cls.social_status_low_high_se,
+      "Age [Elderly -> Young]: se": cls.age_elderly_young_se,
+      "No. Characters [Less -> More]: se": cls.num_characters_less_more_se,
+      "Species [Pets -> Humans]: se": cls.species_pets_humans_se,
+    }
+
+
+class CleanSurveyColumns:
+
+  response_id = "response_id"
+  extended_session_id = "extended_session_id"
+  user_id = "user_id"
+  scenario_order = "scenario_order"
+  intervention = "intervention"
+  pedped = "pedped"
+  barrier = "barrier"
+  crossing_signal = "crossing_signal"
+  attribute_level = "attribute_level"
+  scenario_type_strict = "scenario_type_strict"
+  scenario_type = "scenario_type"
+  default_choice = "default_choice"
+  non_default_choice = "non_default_choice"
+  default_choice_is_omission = "default_choice_is_omission"
+  number_of_characters = "number_of_characters"
+  diff_number_of_characters = "diff_number_of_characters"
+  saved = "saved"
+  template = "template"
+  description_shown = "description_shown"
+  left_hand = "left_hand"
+  user_country3 = "user_country3"
+  review_age = "review_age"
+  review_education = "review_education"
+  review_gender = "review_gender"
+  review_income = "review_income"
+  review_political = "review_political"
+  review_religious = "review_religious"
+
+  @classmethod
+  def convert_columns_to_clean_columns(cls):
+    return {
+    'ResponseID': cls.response_id,
+    'ExtendedSessionID': cls.extended_session_id,
+    'UserID': cls.user_id,
+    'ScenarioOrder': cls.scenario_order,
+    'Intervention': cls.intervention,
+    'PedPed': cls.pedped,
+    'Barrier': cls.barrier,
+    'CrossingSignal': cls.crossing_signal,
+    'AttributeLevel': cls.attribute_level,
+    'ScenarioTypeStrict': cls.scenario_type_strict,
+    'ScenarioType': cls.scenario_type,
+    'DefaultChoice': cls.default_choice,
+    'NonDefaultChoice': cls.non_default_choice,
+    'DefaultChoiceIsOmission': cls.default_choice_is_omission,
+    'NumberOfCharacters': cls.number_of_characters,
+    'DiffNumberOFCharacters': cls.diff_number_of_characters,
+    'Saved': cls.saved,
+    'Template': cls.template,
+    'DescriptionShown': cls.description_shown,
+    'LeftHand': cls.left_hand,
+    'UserCountry3': cls.user_country3,
+    'Review_age': cls.review_age,
+    'Review_education': cls.review_education,
+    'Review_gender': cls.review_gender,
+    'Review_income': cls.review_income,
+    'Review_political': cls.review_political,
+    'Review_religious': cls.review_religious,
+    }
+
+
+class CleanODBRanking:
+
+  cluster = "Cluster"
+  iso3 = "ISO3"
+  country = "Country"
+
+  @classmethod
+  def get_drop_columns(cls, columns):
+
+    retain = [cls.cluster, cls.iso3, cls.country]
+    return [col for col in columns if col not in retain]
+
+
+
+def get_scenario_status(count):
+
+  if count == 0:
+    return "missing"
+
+  elif count < 2:
+    return "invalid_too_few"
+
+  elif count > 2:
+    return "invalid_too_many"
+
+  else:
+    return "ok"
+
+
+def check_age_category(age):
+    age_ranges = [
+        (float('-inf'), -1, "missing"),
+        (0, 15, "under_16"),
+        (16, 20, "between_16_and_20"),
+        (21, 25, "between_21_and_25"),
+        (26, 30, "between_26_and_30"),
+        (31, 35, "between_31_and_35"),
+        (36, 40, "between_36_and_40"),
+        (41, 45, "between_41_and_45"),
+        (46, 50, "between_46_and_50"),
+        (51, 55, "between_51_and_55"),
+        (56, 60, "between_56_and_60"),
+        (61, 65, "between_61_and_65"),
+        (66, 70, "between_66_and_70"),
+        (71, 75, "between_71_and_75"),
+        (76, 80, "between_76_and_80"),
+        (81, 85, "between_81_and_85"),
+        (86, 90, "between_86_and_90"),
+        (91, 95, "between_91_and_95"),
+        (96, 100, "between_96_and_100"),
+        (101, float('inf'), "invalid"),
+    ]
+
+    for start, end, label in age_ranges:
+        if start <= age <= end:
+            return label
+
+age_categories = [
+    "missing",
+    "under_16",
+    "between_16_and_20",
+    "between_21_and_25",
+    "between_26_and_30",
+    "between_31_and_35",
+    "between_36_and_40",
+    "between_41_and_45",
+    "between_46_and_50",
+    "between_51_and_55",
+    "between_56_and_60",
+    "between_61_and_65",
+    "between_66_and_70",
+    "between_71_and_75",
+    "between_76_and_80",
+    "between_81_and_85",
+    "between_86_and_90",
+    "between_91_and_95",
+    "between_96_and_100",
+    "invalid"
+]
+
+age_categories = pd.CategoricalDtype(categories=age_categories, ordered=True)
+
+#Load Data
+
+load_dotenv()
+DATA_DIRECTORY= "/content/drive/MyDrive/thesis_project"
+
+#Load Moral Machine data
+df_countries_change = pd.read_csv(f"{DATA_DIRECTORY}/CountriesChangePr.csv")
+
+survey_dtypes = {
+    "ScenarioOrder": np.int16,
+    "Intervention": bool,
+    "PedPed": bool,
+    "Barrier": bool,
+    "CrossingSignal": np.int16,
+    "NumberOfCharacters": np.int16,
+    "DiffNumberOFCharacters": np.int16,
+    "Saved": bool,
+    "DescriptionShown": np.float32,  # Changed from float16 to float32
+    "LeftHand": np.float32,          # Changed from float16 to float32
+    "Review_political": np.float32,  # Changed from float16 to float32
+    "Review_religious": np.float32,  # Changed from float16 to float32
+    "Review_age": np.float32,        # Changed from float16 to float32
+    "AttributeLevel": "category",
+    "ScenarioTypeStrict": "category",
+    "ScenarioType": "category",
+    "DefaultChoice": "category",
+    "NonDefaultChoice": "category",
+    "Template": "category",
+    "UserCountry3": "category"
+}
+
+try:
+    df_survey = pd.read_csv(
+        f"{DATA_DIRECTORY}/SharedResponsesSurvey.csv",
+        low_memory=False,
+        dtype=survey_dtypes,
+        nrows=300000
+    )
+except Exception as e:
+    print("Error loading the CSV:", e)
+
+#Load Open Data Barometer data
+df_odb_ranking = pd.read_csv(f"{DATA_DIRECTORY}/ODB_ranking.csv")
+
+
+
