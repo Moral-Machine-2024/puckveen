@@ -1,0 +1,197 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Set the style of the visualization
+sns.set(style="whitegrid")
+
+# Columns to plot
+columns = [
+    '[Omission -> Commission]: Estimates', '[Passengers -> Pedestrians]: Estimates',
+    'Law [Illegal -> Legal]: Estimates', 'Gender [Male -> Female]: Estimates',
+    'Fitness [Large -> Fit]: Estimates', 'Social Status [Low -> High]: Estimates',
+    'Age [Elderly -> Young]: Estimates', 'No. Characters [Less -> More]: Estimates',
+    'Species [Pets -> Humans]: Estimates'
+]
+
+# Assuming 'Unnamed: 0' is the country names column
+data.rename(columns={'Unnamed: 0': 'Country'}, inplace=True)
+
+# Set index to Country for easier plotting
+# data.set_index('Country', inplace=True)
+# Number of countries per plot
+chunk_size = 20
+
+# Split data into chunks
+chunks = [data.iloc[i:i + chunk_size] for i in range(0, data.shape[0], chunk_size)]
+
+
+
+chunk_size = 35
+
+# Split data into chunks
+chunks = [data.iloc[i:i + chunk_size] for i in range(0, data.shape[0], chunk_size)]
+for j, chunk in enumerate(chunks):
+    for col in columns:
+        plt.figure(figsize=(12, 8))
+        # Create barplot
+        sns.barplot(x='Country', y=col, data=chunk, palette="coolwarm")
+
+        # Set plot title and labels
+        plt.title(f'Country-wise Preferences for {col} (Chunk {j+1})', fontsize=15)
+        plt.xlabel('Country', fontsize=12)
+        plt.ylabel('Estimate', fontsize=12)
+
+        # Rotate x-axis labels for better readability
+        plt.xticks(rotation=90)
+
+        # Highlight positive and negative values
+        for i, estimate in enumerate(chunk[col]):
+            if estimate >= 0:
+                plt.text(i, estimate + 0.01, f'{estimate:.2f}', color='blue', ha="center")
+            else:
+                plt.text(i, estimate - 0.02, f'{estimate:.2f}', color='red', ha="center")
+
+        # Display plot
+        plt.tight_layout()
+        plt.show()
+
+
+chunk_size = 15
+
+# Split data into chunks
+chunks = [data.iloc[i:i + chunk_size] for i in range(0, data.shape[0], chunk_size)]
+# Generate a heatmap for each chunk
+for i, chunk in enumerate(chunks):
+    plt.figure(figsize=(14, 10))
+    heatmap_data = chunk[columns]
+    sns.heatmap(heatmap_data, annot=True, fmt=".2f", cmap="coolwarm", linewidths=.5)
+
+    # Set plot title and labels
+    plt.title(f'Country-wise Preferences Estimates (Part {i+1})', fontsize=18)
+    plt.xlabel('Attributes', fontsize=12)
+    plt.ylabel('Country', fontsize=12)
+
+    # Display plot
+    plt.tight_layout()
+    plt.show()
+
+
+import pandas as pd
+
+df = pd.read_csv('/content/drive/MyDrive/ODB_ranking.csv')
+
+# Display basic information about df
+print("Basic Information about the DataFrame:")
+print(df.info())
+
+print("\nSummary Statistics for Numerical Columns:")
+print(df.describe())
+
+print("\nFirst few rows of the DataFrame:")
+print(df.head())
+
+# Display unique values in selected columns
+print("\nUnique values in selected columns:")
+print("Regions:", df['Region'].unique())
+print("Income Levels:", df['Income'].unique())
+print("G20 Membership:", df['G20'].unique())
+print("G7 Membership:", df['G7'].unique())
+print("Clusters:", df['Cluster'].unique())
+
+
+
+df_countries_change = data.copy()
+merged_shared_countries_odb = df_odb_ranking.merge(df_countries_change, left_on= "ISO3", right_on="Country")
+
+Analysis of Moral Decision Variability by Cluster and Region
+In this data visualisation it is explored how moral decisions vary with respect to different geographical clusters and regions. This variability is crucial as cultural norms and societal values significantly influence moral judgments, and these can differ markedly across different areas.
+X Variables: These represent the different regions and legal system clusters. Each region and cluster has distinct cultural and legal frameworks that potentially influence moral decisions.
+Y Variables: These are measures of the confidence levels that participants exhibit when making specific moral choices, such as decisions involving omissions versus commissions or preferences for saving men over women. Visual Analysis:
+For each region and cluster, we generate graphs that display the patterns of moral decision-making. These visualizations help identify if certain moral choices are consistently preferred in particular regions or clusters, reflecting the underlying cultural and legal influences.
+
+merged_df
+
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Merging the DataFrames
+merged_df = df_odb_ranking.merge(df_countries_change, left_on='ISO3', right_on='Country')
+
+# Define the columns for moral decisions
+moral_decision_columns = [
+    '[Omission -> Commission]: Estimates',
+    '[Passengers -> Pedestrians]: Estimates',
+    'Law [Illegal -> Legal]: Estimates',
+    'Gender [Male -> Female]: Estimates',
+    'Fitness [Large -> Fit]: Estimates',
+    'Social Status [Low -> High]: Estimates',
+    'Age [Elderly -> Young]: Estimates',
+    'No. Characters [Less -> More]: Estimates',
+    'Species [Pets -> Humans]: Estimates'
+]
+
+# Function to get the winning label
+def get_winning_label(column):
+    if 'Omission' in column:
+        return ('Omission', 'Commission')
+    if 'Passengers' in column:
+        return ('Passengers', 'Pedestrians')
+    if 'Illegal' in column:
+        return ('Illegal', 'Legal')
+    if 'Male' in column:
+        return ('Male', 'Female')
+    if 'Large' in column:
+        return ('Large', 'Fit')
+    if 'Low' in column:
+        return ('Low', 'High')
+    if 'Elderly' in column:
+        return ('Elderly', 'Young')
+    if 'Less' in column:
+        return ('Less', 'More')
+    if 'Pets' in column:
+        return ('Pets', 'Humans')
+    return ('', '')
+
+# 1. Bar plots of moral decision columns by region with annotations
+for column in moral_decision_columns:
+    plt.figure(figsize=(14, 10))
+    ax = sns.barplot(data=merged_df, x='Region', y=column, ci=None)
+    plt.title(f'{column} by Region')
+    plt.xticks(rotation=45)
+    plt.xlabel('Region')
+    plt.ylabel(column)
+
+    # Annotate bars
+    winning_labels = get_winning_label(column)
+    for p in ax.patches:
+        height = p.get_height()
+        ax.annotate(f'{winning_labels[0] if height > 0 else winning_labels[1]}',
+                    (p.get_x() + p.get_width() / 2., height),
+                    ha='center', va='center',
+                    xytext=(0, 10),
+                    textcoords='offset points')
+
+    plt.show()
+
+# 2. Bar plots of moral decision columns by cluster with annotations
+for column in moral_decision_columns:
+    plt.figure(figsize=(14, 10))
+    ax = sns.barplot(data=merged_df, x='Cluster', y=column, ci=None)
+    plt.title(f'{column} by Cluster')
+    plt.xticks(rotation=45)
+    plt.xlabel('Cluster')
+    plt.ylabel(column)
+
+    # Annotate bars
+    winning_labels = get_winning_label(column)
+    for p in ax.patches:
+        height = p.get_height()
+        ax.annotate(f'{winning_labels[1] if height > 0 else winning_labels[0]}',
+                    (p.get_x() + p.get_width() / 2., height),
+                    ha='center', va='center',
+                    xytext=(0, 10),
+                    textcoords='offset points')
+
+    plt.show()
