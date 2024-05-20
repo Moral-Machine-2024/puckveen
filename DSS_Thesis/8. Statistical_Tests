@@ -1,0 +1,117 @@
+Statistical Significance
+
+[ ]
+ clusters = merged_shared_countries_odb['Cluster'].unique()
+regions = merged_shared_countries_odb['Region'].unique()
+
+# Shapiro-Wilk Test
+print("Shapiro-Wilk Test Results:")
+for cluster in clusters:
+    cluster_data = merged_shared_countries_odb[merged_shared_countries_odb['Cluster'] == cluster]['Estimated_Omission_Commission']
+    if len(cluster_data) >= 3:
+        stat, p = stats.shapiro(cluster_data)
+        print(f"Cluster: {cluster} - Statistic={stat}, p-value={p}")
+    else:
+        print(f"Cluster: {cluster} - Not enough data for Shapiro-Wilk test")
+
+for region in regions:
+    region_data = merged_shared_countries_odb[merged_shared_countries_odb['Region'] == region]['Estimated_Omission_Commission']
+    if len(region_data) >= 3:
+        stat, p = stats.shapiro(region_data)
+        print(f"Region: {region} - Statistic={stat}, p-value={p}")
+    else:
+        print(f"Region: {region} - Not enough data for Shapiro-Wilk test")
+
+# Q-Q Plots
+def plot_qq(data, title):
+    plt.figure(figsize=(6, 6))
+    qqplot(data, line ='s')
+    plt.title(title)
+    plt.show()
+
+print("\nQ-Q Plots:")
+for cluster in clusters:
+    cluster_data = merged_shared_countries_odb[merged_shared_countries_odb['Cluster'] == cluster]['Estimated_Omission_Commission']
+    if len(cluster_data) >= 3:
+        plot_qq(cluster_data, f'Q-Q Plot for Cluster {cluster}')
+    else:
+        print(f"Cluster: {cluster} - Not enough data for Q-Q plot")
+
+for region in regions:
+    region_data = merged_shared_countries_odb[merged_shared_countries_odb['Region'] == region]['Estimated_Omission_Commission']
+    if len(region_data) >= 3:
+        plot_qq(region_data, f'Q-Q Plot for Region {region}')
+    else:
+        print(f"Region: {region} - Not enough data for Q-Q plot")
+
+# the histograms
+def plot_histogram(data, title):
+    plt.figure(figsize=(6, 4))
+    plt.hist(data, bins=10, edgecolor='k', alpha=0.7)
+    plt.title(title)
+    plt.xlabel('Value')
+    plt.ylabel('Frequency')
+    plt.show()
+
+print("\nHistograms:")
+for cluster in clusters:
+    cluster_data = merged_shared_countries_odb[merged_shared_countries_odb['Cluster'] == cluster]['Estimated_Omission_Commission']
+    if len(cluster_data) >= 3:
+        plot_histogram(cluster_data, f'Histogram for Cluster {cluster}')
+    else:
+        print(f"Cluster: {cluster} - Not enough data for histogram")
+
+for region in regions:
+    region_data = merged_shared_countries_odb[merged_shared_countries_odb['Region'] == region]['Estimated_Omission_Commission']
+    if len(region_data) >= 3:
+        plot_histogram(region_data, f'Histogram for Region {region}')
+    else:
+        print(f"Region: {region} - Not enough data for histogram")
+
+# Descriptive Statistics
+def print_descriptive_stats(data, label):
+    skewness = stats.skew(data)
+    kurtosis = stats.kurtosis(data) + 3  # To match the normal distribution's kurtosis
+    print(f"{label} - Skewness: {skewness}, Kurtosis: {kurtosis}")
+
+print("\nDescriptive Statistics:")
+for cluster in clusters:
+    cluster_data = merged_shared_countries_odb[merged_shared_countries_odb['Cluster'] == cluster]['Estimated_Omission_Commission']
+    if len(cluster_data) >= 3:
+        print_descriptive_stats(cluster_data, f'Cluster {cluster}')
+    else:
+        print(f"Cluster: {cluster} - Not enough data for descriptive statistics")
+
+for region in regions:
+    region_data = merged_shared_countries_odb[merged_shared_countries_odb['Region'] == region]['Estimated_Omission_Commission']
+    if len(region_data) >= 3:
+        print_descriptive_stats(region_data, f'Region {region}')
+    else:
+        print(f"Region: {region} - Not enough data for descriptive statistics")
+
+The output of the code shows that there are indications that the data might not be normally distributed within clusters and regions. Since ANOVA assumes normality of the dependent variable, another statistical test should be tried as its results could be unreliable if this assumption is violated.
+For the research we will focus on Kruskal-Wallis and Chi-Square tests given the output of our data might be considered not be normally distributed.
+Kruskal-Wallis
+
+After feature selection and before the application of machine learning algorithms, applying Kruskal-Wallis test. This non-parametric method will help me ascertain the statistical significance of the features, particularly focusing on their impact on the response variables. This step is crucial for understanding which features significantly influence outcomes and ensuring that the model includes only the most relevant predictors
+[ ]
+ from scipy.stats import kruskal
+
+# Example usage with hypothetical data loaded into `data`
+if users_cluster.groupby('Cluster')['Count Users'].count().min() > 0:
+    kruskal_results = kruskal(
+        *[group['Count Users'].values for name, group in users_cluster.groupby('Cluster')]
+    )
+    print(f"Kruskal-Wallis Test Result - Statistic: {kruskal_results.statistic}, P-value: {kruskal_results.pvalue}")
+else:
+    print("Not enough data in each cluster to perform Kruskal-Wallis Test.")
+
+Kruskal-Wallis Test Result - Statistic: 3.0, P-value: 0.3916251762710877
+Chi-Square Test for Independence
+
+To determine if there is any association between your categorical predictors and the binary outcome 'saved', a chi-square test is performed for each categorical variable. This test helps identify if the variations in the categorical input variables have any statistical relationship with the outcome variable
+[ ]
+import pandas as pdimport scipy.stats as stats# Example: Test independence between 'user_country3' and 'saved'contingency_table = pd.crosstab(df_survey['user_country3'], df_survey['saved'])chi2, p, dof, expected = stats.chi2_contingency(contingency_table)print(f"Chi-square test result for user_country3 vs saved: Chi2={chi2}, P-value={p}")if p < 0.05:    print("Significant association between country and saving option.")else:    print("No significant association between country and saving option.")
+
+Chi-square test result for user_country3 vs saved: Chi2=194.37897216426637, P-value=3.4178596344076345e-13
+Significant association between country and saving option.
