@@ -1,0 +1,174 @@
+#Data Validity
+
+Users and Sessions
+
+In Total there are 463,675 unique user ids in the dataset.
+
+[ ]
+ len(df_survey[CleanSurveyColumns.user_id].unique())
+26121
+[ ]
+ unique_users = (
+    df_survey
+    .groupby(CleanSurveyColumns.user_id, as_index=False)
+    [CleanSurveyColumns.extended_session_id]
+    .nunique()
+    .sort_values(CleanSurveyColumns.extended_session_id, ascending=False)
+)
+There are 24,478 users that had more than one session.
+
+[ ]
+ unique_users.query("`extended_session_id` > 1").count()
+user_id                112
+extended_session_id    112
+dtype: int64
+There are sessions where not the full set of questions were answered.
+
+[ ]
+ count_surveys =  (
+    df_survey[
+        [
+            CleanSurveyColumns.user_id,
+            CleanSurveyColumns.extended_session_id,
+            CleanSurveyColumns.scenario_order,
+            CleanSurveyColumns.attribute_level
+            ]
+        ]
+    .sort_values(
+        [
+            CleanSurveyColumns.user_id,
+            CleanSurveyColumns.extended_session_id,
+            CleanSurveyColumns.scenario_order
+            ]
+        )
+    .groupby(
+        [
+            CleanSurveyColumns.extended_session_id,
+            CleanSurveyColumns.user_id,
+            CleanSurveyColumns.scenario_order
+            ],
+        as_index=False
+        )
+    [CleanSurveyColumns.attribute_level]
+    .count()
+    .pivot(
+        index=[
+            CleanSurveyColumns.user_id,
+            CleanSurveyColumns.extended_session_id
+            ],
+        columns=[CleanSurveyColumns.scenario_order],
+        values=[CleanSurveyColumns.attribute_level]
+        )
+    .reset_index()
+    .fillna(0)
+)
+
+rename_cols = [
+    f"{col[0]}"
+    if col[0] != "attribute_level"
+    else f"scenario_{col[1]}_count"
+    for col
+    in count_surveys.columns
+    ]
+count_surveys.columns = rename_cols
+
+
+count_surveys = count_surveys.melt(
+    id_vars=[CleanSurveyColumns.user_id, CleanSurveyColumns.extended_session_id],
+    value_name="counts",
+    var_name="scenario"
+    )
+[ ]
+ count_surveys.sort_values([CleanSurveyColumns.user_id, CleanSurveyColumns.extended_session_id]).iloc[np.r_[0:5, -5:0]]
+
+
+Data issues
+
+How to deal with invalid responses?
+
+Decision On Sessions With Too Many Entries
+
+Sessions where a given question was answered more than once will not be considered for further processing. The reason for this decision is that we cannot determine with certainty what would be user's preference on that question.
+Furthermore, there are user sessions where the user tried to answer questions an extraordinary amount of times. These could be considered as either extremely indecisive users or bots.
+[ ]
+ count_surveys.loc[:, "count_scenario_status"] = (
+    count_surveys
+    .apply(lambda x: get_scenario_status(x["counts"]),
+           axis=1
+           )
+    )
+
+sessions = (
+    count_surveys
+    .groupby(['count_scenario_status',  CleanSurveyColumns.extended_session_id], as_index=False).size()
+    .pivot(index=[CleanSurveyColumns.extended_session_id], columns="count_scenario_status", values='size')
+    .fillna(0)
+    .reset_index()
+)
+[ ]
+too_many_responses_in_session = sessions[sessions["invalid_too_many"] > 0]too_many_responses_in_session.head()
+
+
+[ ]
+(    count_surveys    .groupby(CleanSurveyColumns.extended_session_id, as_index=False)    ["counts"]    .sum()    .sort_values("counts", ascending=False)    .rename(columns={"counts": "count_number_of_responses"})    .head())
+
+
+Removing sessions with too many responses from dataset.
+
+[ ]
+ df_survey = df_survey[~df_survey[CleanSurveyColumns.extended_session_id].isin(too_many_responses_in_session['extended_session_id'])]
+Duplicate User Sessions
+
+There were 5,927,259 duplicated user sessions, and 462,488 unique ones, after accounting for sessions with too many responses.
+For the purposes of the current research, the ones retained for further processing are the ones where:
+There are maximum amount of valid answers
+In cases where two sessions with valid answers in provided, the first one is taken, assuming the user session ids are sequential.
+[ ]
+ sessions_with_max_amount_answered = (
+    sessions
+    [sessions["invalid_too_many"] == 0]
+    .merge(count_surveys[[CleanSurveyColumns.extended_session_id, CleanSurveyColumns.user_id]], on=CleanSurveyColumns.extended_session_id)
+    .sort_values([CleanSurveyColumns.user_id, "ok", CleanSurveyColumns.extended_session_id])
+)
+[ ]
+ sessions_with_max_amount_answered.loc[:, "duplicate_user"] = sessions_with_max_amount_answered[ CleanSurveyColumns.user_id].duplicated(keep="first")
+[ ]
+ sessions_with_max_amount_answered[sessions_with_max_amount_answered["duplicate_user"] == True].count()
+extended_session_id    314950
+invalid_too_few        314950
+invalid_too_many       314950
+missing                314950
+ok                     314950
+user_id                314950
+duplicate_user         314950
+dtype: int64
+[ ]
+ sessions_with_max_amount_answered[sessions_with_max_amount_answered["duplicate_user"] == False].count()
+extended_session_id    26118
+invalid_too_few        26118
+invalid_too_many       26118
+missing                26118
+ok                     26118
+user_id                26118
+duplicate_user         26118
+dtype: int64
+Removing duplicated sessions from dataset.
+
+[ ]
+ retain_sessions = (
+    sessions_with_max_amount_answered[
+        sessions_with_max_amount_answered["duplicate_user"] == False
+        ][CleanSurveyColumns.extended_session_id]
+    )
+
+df_survey = df_survey[df_survey[CleanSurveyColumns.extended_session_id].isin(retain_sessions)]
+Removing responses where there is a single row for a given response, as these are considered invalid response.
+
+In a previous paper this is the way that they addressed it.
+Suggested changes to be made for the TypeError.
+[ ]
+survey_counts = df_survey[CleanSurveyColumns.response_id].value_counts().reset_index()survey_counts.columns = ['response_id', 'count']# Filter out response_ids with a count less than 2survey_ids_to_remove = survey_counts[survey_counts['count'] < 2]['response_id']
+
+[ ]
+df_survey.head()
+
