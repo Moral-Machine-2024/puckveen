@@ -457,3 +457,33 @@ pca = PCA(n_components=5, random_state=42)X_train_pca = pca.fit_transform(X_trai
 Neural Network Accuracy with 5 PCA components: 0.69
 With PCA, I noticed a decrease in accuracy, indicating that there are no linear combinations among the data variables.
 Consequently, the model I have chosen as the final result is saved without PCA, under the file name 'neural_network.pkl'
+
+
+algorithms = ['LR', 'NN','DT', 'RF', 'KNN','NN with 3 PCA']
+accuracies = [0.56, 0.73, 0.73, 0.73, 0.71, 0.69,]
+
+# Creating the bar chart
+fig, ax = plt.subplots()
+bars = ax.bar(algorithms, accuracies, color=['blue', 'green', 'yellow', 'red', 'purple', 'orange'])  # Added a new color for PCA component
+
+# Adding the accuracy values on top of the bars
+ax.bar_label(bars)
+
+# Setting labels and title
+ax.set_xlabel('Algorithms')
+ax.set_ylabel('Accuracy')
+ax.set_title('Accuracy Scores of Machine Learning Algorithms')
+
+# Show the plot
+plt.show()
+
+insights = """
+- Neural Network and Random Forest provided the highest accuracy, ideal for deployment.
+- After applying the hyperparameter tuning NN, RF, DF provided the highest accuracy. 
+- KNN preformed, in comparison to the other ML algorithms, slightly worse.
+- Feature importance from Decision Trees indicated that 'scenario_type' and 'barrier' were crucial.
+- Legal systems showed varying impacts on moral decisions, requiring deeper policy analysis.
+"""
+print(insights)
+
+
