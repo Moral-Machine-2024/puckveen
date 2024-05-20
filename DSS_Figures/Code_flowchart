@@ -1,0 +1,81 @@
+!apt-get install -y graphviz
+!pip install graphviz
+
+from graphviz import Digraph
+from IPython.display import Image, display
+
+# Create the Digraph object
+dot = Digraph(comment='Workflow Diagram')
+
+# Define a subgraph for the main workflow
+with dot.subgraph(name='cluster_workflow') as c:
+  c.attr(label='Data Cleaning and Preparation', fontsize='20', color='black', style='rounded')  # Rounded box
+
+  # Data sources
+  dot.node('A', 'Original dataset\nSharedResponses.csv', shape='cylinder', style='filled', fillcolor='#0000FF.', fontsize='12')
+  dot.node('B', 'Cultures dataset\ncultures.csv', shape='cylinder', style='filled', fillcolor='#0000FF.', fontsize='12')
+  dot.edge('A', 'D', label='Merge (on="country", how="left")')
+  dot.edge('B', 'D')
+
+with dot.subgraph(name='cluster_1') as c:
+    c.attr(label='Extract and Prepare Sample', fontsize='12', color='black',)
+    c.node('D', 'Sub-sample (1 per continent)', fontsize='12')
+    c.node('E', 'Data cleaning', fontsize='12')
+    c.node('F', 'Feature engineering', fontsize='12')
+    c.node('G', 'Sub-sample\n(stratify based on culture)', fontsize='12')
+    c.edge('D', 'E')
+    c.edge('E', 'F')
+    c.edge('F', 'G')
+
+
+  # Annotations
+# Add notes to the left side of the diagram
+dot.node('H', 'Delete unnecessary columns\nDeal with missing values\nSet efficient dtypes\nDelete incomplete scenarios', shape='note', fontsize='10', pos='1000,1000!',align ='left')
+dot.edge('H', 'E', dir='none')
+
+dot.node('I', 'A function collects desired features for each scenario and creates a new dataframe', shape='note', fontsize='10', pos='1000,1000!' ,align ='left')
+dot.edge('F', 'I', dir='none')
+
+# Add the last note to the right corner
+dot.node('J', 'Reduce size of sample by ensuring that all cultures remain present with similar proportions', shape='note', fontsize='10', pos='1000,1000!', align='right')
+dot.edge('J', 'G', dir='none')
+
+
+
+
+# Merge final sub-sample and further steps (outside the box)
+dot.node('K', 'Merge final sub-sample\n(6 continents = 6 sub-samples)', fontsize='12')
+dot.edge('G', 'K')
+
+dot.node('L', 'Visualize distributions', fontsize='12' ,shape='box')
+dot.edge('K', 'L')
+
+# Split datasets (outside the box)
+dot.node('M', 'Validation set', fontsize='12',shape='box')
+dot.node('N', 'Train set', fontsize='12',shape='box')
+dot.node('O', 'Test set', fontsize='12',shape='box')
+dot.edge('K', 'M')
+dot.edge('K', 'N')
+dot.edge('K', 'O')
+
+# Model training and evaluation (outside the box)
+dot.node('P', 'Prediction with validation set', fontsize='12',shape='box')
+dot.edge('M', 'P')
+
+dot.node('Q', 'Train models: Bayesian classifier, Random Forests, SVM, KNN', fontsize='12',shape='box')
+dot.edge('N', 'Q')
+dot.edge('Q','P')
+
+dot.node('R', 'Hyperparameter tuning', fontsize='12' ,shape='box')
+dot.edge('P', 'R')
+dot.edge('P', 'Q')
+dot.node('S', 'Report results on test set\nAccuracy\nPrecision\nRecall\nF1-score', fontsize='12',shape='box')
+dot.edge('O', 'S')
+dot.edge('Q', 'S')
+dot.edge('R', 'Q')
+
+# Render the graph
+dot.render('workflow_diagram', format='png')
+
+# Display the graph within the notebook
+display(Image(filename='workflow_diagram.png'))
