@@ -1,0 +1,71 @@
+#Features
+
+!pip install seaborn matplotlib
+# Select only numeric columns for correlation matrix calculation
+numeric_df = df_survey.select_dtypes(include=[np.number])
+
+# Calculate the correlation matrix
+corr = numeric_df.corr()
+
+# Generate a heatmap
+plt.figure(figsize=(12, 10))
+sns.heatmap(corr, annot=True, fmt=".2f", cmap='coolwarm')
+plt.title('Feature Correlation Matrix')
+plt.show()
+
+# Decision on irrelevant features.
+
+Default Choice
+Non-Default Choice
+Default Choice Is Omission
+Template
+Description Shown
+Left Hand
+
+df_survey = df_survey.drop([
+    CleanSurveyColumns.default_choice,
+    CleanSurveyColumns.non_default_choice,
+    CleanSurveyColumns.left_hand,
+    CleanSurveyColumns.default_choice_is_omission,
+    CleanSurveyColumns.template,
+    CleanSurveyColumns.description_shown
+    ], axis=1)
+
+# Select only numeric columns for correlation matrix calculation
+numeric_df_relevant = df_survey.select_dtypes(include=[np.number])
+
+# Calculate the correlation matrix
+corr = numeric_df_relevant.corr()
+
+# Generate a heatmap
+plt.figure(figsize=(12, 10))
+sns.heatmap(corr, annot=True, fmt=".2f", cmap='coolwarm')
+plt.title('Feature Correlation Matrix with Relevant Features')
+plt.show()
+
+
+import pandas as pd
+import numpy as np
+
+# df_survey already contains the features I want to include
+
+traits = ["Law Abiding", "Aggressive", "Cautious"]
+
+# Create a binary matrix: each row corresponds to a feature, each column to a trait
+# This is a simplified example: you should populate this based on your theoretical model or empirical analysis
+data = {
+    "Law Abiding": [1, 0, 0],
+    "Aggressive": [0, 1, 0],
+    "Cautious": [0, 0, 1]
+}
+
+# Features are just placeholders, replace them with your actual features names
+features = ['feature1', 'feature2', 'feature3']
+
+# Create the DataFrame
+binary_matrix = pd.DataFrame(data, index=features)
+
+# Display the binary transformation matrix
+print(binary_matrix)
+
+
